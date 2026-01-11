@@ -72,7 +72,7 @@ const Calculator: React.FC<CalculatorProps> = ({ patient, currentStepId, algoTyp
       details: {
         indication: '室上性心动过速 (SVT) 的药物转复。',
         route: '极速 IV/IO 推注（靠近心脏处）。',
-        info: '半衰期 <10 秒。推注后需立即用 5-10ml 盐水冲管。可能引起短暂停搏。'
+        info: `半衰期 < 10 秒。推注后需立即用 5-10ml 盐水冲管。可能引起短暂停搏。`
       }
     },
     { 

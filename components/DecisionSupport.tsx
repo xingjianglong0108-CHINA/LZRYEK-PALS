@@ -443,7 +443,7 @@ const DecisionSupport: React.FC<DecisionSupportProps> = ({
            <div className="bg-rose-50 p-4 rounded-3xl border border-rose-100">
               <Droplets className="w-5 h-5 text-rose-600 mb-2" />
               <div className="text-[10px] font-black text-rose-400 uppercase">收缩压 (SBP)</div>
-              <div className="text-sm font-black text-slate-900">> 5th 百分位</div>
+              <div className="text-sm font-black text-slate-900">&gt; 5th 百分位</div>
            </div>
            <div className="bg-emerald-50 p-4 rounded-3xl border border-emerald-100">
               <Thermometer className="w-5 h-5 text-emerald-600 mb-2" />

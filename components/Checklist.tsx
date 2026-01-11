@@ -18,7 +18,7 @@ const Checklist: React.FC = () => {
   const [postItems, setPostItems] = useState([
     { id: 'p1', text: '呼吸：SpO2 94%-99%，PaCO2 35-45mmHg', checked: false },
     { id: 'p2', text: '循环：维持收缩压/舒张压在目标范围', checked: false },
-    { id: 'p3', text: '神经：评估意识，避免高热 (>37.5°C)', checked: false },
+    { id: 'p3', text: '神经：评估意识，避免高热 (&gt;37.5°C)', checked: false },
     { id: 'p4', text: '代谢：监测血糖与电解质', checked: false },
     { id: 'p5', text: '影像：完成 12 导联 ECG 与 胸片', checked: false },
     { id: 'p6', text: '转运：联系 PICU 进行后续 TTM 管理', checked: false }
