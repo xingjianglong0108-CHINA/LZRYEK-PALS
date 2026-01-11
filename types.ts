@@ -4,7 +4,8 @@ export enum NavTab {
   TARGETS = 'TARGETS',
   CALCULATOR = 'CALCULATOR',
   CHECKLIST = 'CHECKLIST',
-  THEORY = 'THEORY'
+  THEORY = 'THEORY',
+  AI = 'AI'
 }
 
 export enum AlgorithmType {

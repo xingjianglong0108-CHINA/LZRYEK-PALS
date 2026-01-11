@@ -6,12 +6,15 @@ import PhysioTargets from './components/PhysioTargets';
 import Calculator from './components/Calculator';
 import Checklist from './components/Checklist';
 import Theory from './components/Theory';
+import AiAssistant from './components/AiAssistant';
+import ResuscitationTimer from './components/ResuscitationTimer';
 import { 
   Activity, 
   Calculator as CalcIcon, 
   ClipboardCheck, 
   BookOpen, 
-  Zap
+  Zap,
+  Brain
 } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -22,7 +25,6 @@ const App: React.FC = () => {
     isMultiRescuer: false
   });
 
-  // 提升算法状态以供 Calculator 联动过滤
   const [algoType, setAlgoType] = useState<AlgorithmType>(AlgorithmType.CARDIAC_ARREST);
   const [currentStepId, setCurrentStepId] = useState('START');
 
@@ -49,6 +51,7 @@ const App: React.FC = () => {
         );
       case NavTab.CHECKLIST: return <Checklist />;
       case NavTab.THEORY: return <Theory />;
+      case NavTab.AI: return <AiAssistant patient={patient} />;
       default: return <DecisionSupport patient={patient} algoType={algoType} setAlgoType={setAlgoType} currentStepId={currentStepId} setCurrentStepId={setCurrentStepId} />;
     }
   };
@@ -62,7 +65,7 @@ const App: React.FC = () => {
             儿科高级生命支持<span className="text-blue-600">-LZRYEK</span>
           </h1>
           <div className="flex flex-col items-end gap-1">
-             <span className="text-[10px] font-bold px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">Build v2025.2</span>
+             <span className="text-[10px] font-bold px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">Build v2025.3</span>
              <span className="text-[10px] font-bold px-2 py-0.5 bg-slate-100 text-slate-500 rounded-full uppercase">2025 AHA/AAP 指南</span>
           </div>
         </div>
@@ -105,32 +108,9 @@ const App: React.FC = () => {
           </button>
         </div>
 
-        {/* Quick Stats Grid */}
-        <div className="grid grid-cols-2 gap-y-3 gap-x-6 px-2 mb-2">
-          <div className="flex justify-between items-center">
-            <span className="text-xs font-bold text-slate-400">按压比例:</span>
-            <span className="text-sm font-black text-rose-500 tracking-tight">{patient.isMultiRescuer ? '15:2' : '30:2'}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-xs font-bold text-slate-400">AED 电极:</span>
-            <span className="text-sm font-black text-amber-500">{patient.weight < 25 ? '儿科型' : '成人型'}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-xs font-bold text-slate-400">通气频率:</span>
-            <span className="text-sm font-black text-blue-600 tracking-tight">20-30 次/分</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-xs font-bold text-slate-400">生理盐水:</span>
-            <span className="text-sm font-black text-emerald-500">{patient.weight * 20} ml</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-xs font-bold text-slate-400">肾上(IV/IO):</span>
-            <span className="text-sm font-black text-rose-500">{(patient.weight * 0.1).toFixed(1)} ml</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-xs font-bold text-slate-400">肾上(气管):</span>
-            <span className="text-sm font-black text-rose-500 tracking-tight">{(patient.weight * 1.0).toFixed(1)} ml</span>
-          </div>
+        {/* Global Resuscitation Timer */}
+        <div className="mb-6">
+           <ResuscitationTimer />
         </div>
       </header>
 
@@ -145,31 +125,37 @@ const App: React.FC = () => {
           active={activeTab === NavTab.DECISION} 
           onClick={() => setActiveTab(NavTab.DECISION)} 
           icon={<Zap className="w-5 h-5" />} 
-          label="决策引导" 
+          label="决策" 
         />
         <NavButton 
           active={activeTab === NavTab.TARGETS} 
           onClick={() => setActiveTab(NavTab.TARGETS)} 
           icon={<Activity className="w-5 h-5" />} 
-          label="生理目标" 
+          label="目标" 
         />
         <NavButton 
           active={activeTab === NavTab.CALCULATOR} 
           onClick={() => setActiveTab(NavTab.CALCULATOR)} 
           icon={<CalcIcon className="w-5 h-5" />} 
-          label="计算联动" 
+          label="剂量" 
+        />
+        <NavButton 
+          active={activeTab === NavTab.AI} 
+          onClick={() => setActiveTab(NavTab.AI)} 
+          icon={<Brain className="w-5 h-5" />} 
+          label="助手" 
         />
         <NavButton 
           active={activeTab === NavTab.CHECKLIST} 
           onClick={() => setActiveTab(NavTab.CHECKLIST)} 
           icon={<ClipboardCheck className="w-5 h-5" />} 
-          label="核查清单" 
+          label="核查" 
         />
         <NavButton 
           active={activeTab === NavTab.THEORY} 
           onClick={() => setActiveTab(NavTab.THEORY)} 
           icon={<BookOpen className="w-5 h-5" />} 
-          label="理论要点" 
+          label="要点" 
         />
       </nav>
     </div>
