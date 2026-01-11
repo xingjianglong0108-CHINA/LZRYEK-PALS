@@ -4,8 +4,7 @@ export enum NavTab {
   TARGETS = 'TARGETS',
   CALCULATOR = 'CALCULATOR',
   CHECKLIST = 'CHECKLIST',
-  THEORY = 'THEORY',
-  AI = 'AI'
+  THEORY = 'THEORY'
 }
 
 export enum AlgorithmType {
@@ -20,12 +19,18 @@ export interface PatientData {
   isMultiRescuer: boolean;
 }
 
+export interface EquipmentSize {
+  name: string;
+  size: string;
+  note?: string;
+}
+
 export interface DrugDose {
   name: string;
   dose: string;
   max?: string;
   note?: string;
-  relevantSteps?: string[]; // 关联的决策步骤 ID
+  relevantSteps?: string[];
   details?: {
     indication: string;
     route: string;

@@ -6,15 +6,13 @@ import PhysioTargets from './components/PhysioTargets';
 import Calculator from './components/Calculator';
 import Checklist from './components/Checklist';
 import Theory from './components/Theory';
-import AiAssistant from './components/AiAssistant';
 import ResuscitationTimer from './components/ResuscitationTimer';
 import { 
   Activity, 
   Calculator as CalcIcon, 
   ClipboardCheck, 
   BookOpen, 
-  Zap,
-  Brain
+  Zap
 } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -27,6 +25,16 @@ const App: React.FC = () => {
 
   const [algoType, setAlgoType] = useState<AlgorithmType>(AlgorithmType.CARDIAC_ARREST);
   const [currentStepId, setCurrentStepId] = useState('START');
+
+  // 即时计算输出项逻辑
+  const calcStats = {
+    ratio: patient.isMultiRescuer ? '15:2' : '30:2',
+    aed: (patient.age < 8 || patient.weight < 25) ? '儿科型' : '成人型',
+    vent: '20-30 次/分',
+    saline: `${patient.weight * 20} ml`,
+    epiIv: `${(patient.weight * 0.1).toFixed(1)} ml`,
+    epiEt: `${(patient.weight * 1.0).toFixed(1)} ml`
+  };
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -51,7 +59,6 @@ const App: React.FC = () => {
         );
       case NavTab.CHECKLIST: return <Checklist />;
       case NavTab.THEORY: return <Theory />;
-      case NavTab.AI: return <AiAssistant patient={patient} />;
       default: return <DecisionSupport patient={patient} algoType={algoType} setAlgoType={setAlgoType} currentStepId={currentStepId} setCurrentStepId={setCurrentStepId} />;
     }
   };
@@ -61,33 +68,32 @@ const App: React.FC = () => {
       {/* Header */}
       <header className="p-6 pt-8 pb-4">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-black text-slate-900 leading-tight">
+          <h1 className="text-xl font-black text-slate-900 leading-tight">
             儿科高级生命支持<span className="text-blue-600">-LZRYEK</span>
           </h1>
           <div className="flex flex-col items-end gap-1">
              <span className="text-[10px] font-bold px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">Build v2025.3</span>
-             <span className="text-[10px] font-bold px-2 py-0.5 bg-slate-100 text-slate-500 rounded-full uppercase">2025 AHA/AAP 指南</span>
           </div>
         </div>
 
         {/* Patient Config Area */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-2 gap-4 mb-4">
           <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 shadow-sm transition-all hover:border-blue-200">
-            <label className="text-xs font-bold text-slate-400 mb-1 block uppercase tracking-wider">体重 (KG)</label>
+            <label className="text-[10px] font-black text-slate-400 mb-1 block uppercase tracking-wider">体重 (KG)</label>
             <input 
               type="number" 
               value={patient.weight} 
               onChange={(e) => setPatient({...patient, weight: Number(e.target.value)})}
-              className="text-2xl font-black text-slate-900 bg-transparent w-full focus:outline-none"
+              className="text-xl font-black text-slate-900 bg-transparent w-full focus:outline-none"
             />
           </div>
           <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 shadow-sm transition-all hover:border-blue-200">
-            <label className="text-xs font-bold text-slate-400 mb-1 block uppercase tracking-wider">年龄 (岁)</label>
+            <label className="text-[10px] font-black text-slate-400 mb-1 block uppercase tracking-wider">年龄 (岁)</label>
             <input 
               type="number" 
               value={patient.age} 
               onChange={(e) => setPatient({...patient, age: Number(e.target.value)})}
-              className="text-2xl font-black text-slate-900 bg-transparent w-full focus:outline-none"
+              className="text-xl font-black text-slate-900 bg-transparent w-full focus:outline-none"
             />
           </div>
         </div>
@@ -96,16 +102,46 @@ const App: React.FC = () => {
         <div className="flex bg-slate-100 p-1.5 rounded-2xl mb-6">
           <button 
             onClick={() => setPatient({...patient, isMultiRescuer: false})}
-            className={`flex-1 py-3 text-xs font-black rounded-xl transition-all ${!patient.isMultiRescuer ? 'bg-white shadow-md text-blue-600 scale-[1.02]' : 'text-slate-500'}`}
+            className={`flex-1 py-3 text-xs font-black rounded-xl transition-all ${!patient.isMultiRescuer ? 'bg-white shadow-md text-blue-600 scale-[1.01]' : 'text-slate-500'}`}
           >
             单人复苏 (30:2)
           </button>
           <button 
             onClick={() => setPatient({...patient, isMultiRescuer: true})}
-            className={`flex-1 py-3 text-xs font-black rounded-xl transition-all ${patient.isMultiRescuer ? 'bg-white shadow-md text-blue-600 scale-[1.02]' : 'text-slate-500'}`}
+            className={`flex-1 py-3 text-xs font-black rounded-xl transition-all ${patient.isMultiRescuer ? 'bg-white shadow-md text-blue-600 scale-[1.01]' : 'text-slate-500'}`}
           >
             多人复苏 (15:2)
           </button>
+        </div>
+
+        {/* 即时计算输出项卡盘 - 参照图片样式 */}
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 mb-6">
+          <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+            <div className="flex justify-between items-center border-b border-slate-50 pb-2">
+              <span className="text-[11px] font-bold text-slate-500">按压比例:</span>
+              <span className="text-[13px] font-black text-rose-500">{calcStats.ratio}</span>
+            </div>
+            <div className="flex justify-between items-center border-b border-slate-50 pb-2">
+              <span className="text-[11px] font-bold text-slate-500">AED 电极:</span>
+              <span className="text-[13px] font-black text-amber-500">{calcStats.aed}</span>
+            </div>
+            <div className="flex justify-between items-center border-b border-slate-50 pb-2">
+              <span className="text-[11px] font-bold text-slate-500">通气频率:</span>
+              <span className="text-[13px] font-black text-blue-500">{calcStats.vent}</span>
+            </div>
+            <div className="flex justify-between items-center border-b border-slate-50 pb-2">
+              <span className="text-[11px] font-bold text-slate-500">生理盐水:</span>
+              <span className="text-[13px] font-black text-emerald-500">{calcStats.saline}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-[11px] font-bold text-slate-500">肾上(IV/IO):</span>
+              <span className="text-[13px] font-black text-rose-500">{calcStats.epiIv}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-[11px] font-bold text-slate-500">肾上(气管):</span>
+              <span className="text-[13px] font-black text-rose-500">{calcStats.epiEt}</span>
+            </div>
+          </div>
         </div>
 
         {/* Global Resuscitation Timer */}
@@ -138,12 +174,6 @@ const App: React.FC = () => {
           onClick={() => setActiveTab(NavTab.CALCULATOR)} 
           icon={<CalcIcon className="w-5 h-5" />} 
           label="剂量" 
-        />
-        <NavButton 
-          active={activeTab === NavTab.AI} 
-          onClick={() => setActiveTab(NavTab.AI)} 
-          icon={<Brain className="w-5 h-5" />} 
-          label="助手" 
         />
         <NavButton 
           active={activeTab === NavTab.CHECKLIST} 

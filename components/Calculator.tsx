@@ -1,7 +1,9 @@
 
 import React, { useState, useMemo } from 'react';
-import { PatientData, DrugDose, AlgorithmType } from '../types';
-import { Calculator as CalcIcon, AlertTriangle, Shield, Info, ChevronDown, ChevronUp, Filter, Eye, EyeOff } from 'lucide-react';
+import { PatientData, DrugDose, AlgorithmType, EquipmentSize } from '../types';
+import { 
+  AlertTriangle, Shield, ChevronDown, Ruler, Beaker, Binary, Info, HeartPulse, Zap
+} from 'lucide-react';
 
 interface CalculatorProps {
   patient: PatientData;
@@ -11,207 +13,225 @@ interface CalculatorProps {
 
 const Calculator: React.FC<CalculatorProps> = ({ patient, currentStepId, algoType }) => {
   const weight = patient.weight;
+  const age = patient.age;
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
-  const [showAll, setShowAll] = useState(false);
+  const [activeSubTab, setActiveSubTab] = useState<'DRUGS' | 'EQUIPMENT'>('DRUGS');
+
+  const equipment: EquipmentSize[] = [
+    { name: '气管导管 (ETT - 有囊)', size: `${(age / 4 + 3.5).toFixed(1)} mm`, note: '内径 (ID)' },
+    { name: '气管导管 (ETT - 无囊)', size: `${(age / 4 + 4).toFixed(1)} mm`, note: '内径 (ID)' },
+    { name: '插管深度 (唇)', size: `${(weight / 2 + 12).toFixed(1)} cm`, note: '或 ID × 3' },
+    { name: '喉镜片 (Laryngoscope)', size: age < 1 ? '1 号' : (age < 2 ? '1.5 号' : '2 号'), note: 'Miller 或 Macintosh' },
+    { name: '吸痰管 (Suction Catheter)', size: `${Math.round((age / 4 + 4) * 2) + 2} F`, note: '插管 ID × 2' },
+    { name: '除颤电极板 (Paddles)', size: weight < 10 ? '婴儿型 (4.5cm)' : '成人型 (8-12cm)', note: '接触充分是关键' }
+  ];
 
   const drugs: DrugDose[] = [
     { 
-      name: '肾上腺素 (IV/IO 1:10000)', 
+      name: '肾上腺素 (IV/IO)', 
       dose: `${(weight * 0.1).toFixed(1)} ml`, 
-      note: '0.01 mg/kg, 每3-5min', 
+      note: '0.01 mg/kg (1:10000)', 
       max: '1 mg (10ml)',
-      relevantSteps: ['SHOCKABLE_2', 'SHOCKABLE_3', 'NON_SHOCKABLE_1', 'CPR_START', 'ADVANCED_BRADY'],
       details: {
-        indication: '心脏骤停 (VF/pVT, PEA/Asystole)、症状性心动过缓。',
-        route: '静脉推注 (IV) 或骨内推注 (IO)。',
-        info: '强效 α/β 受体激动剂。增加外周血管阻力，提高冠脉灌注压。'
+        indication: '【所有心脏骤停】(VF/pVT/PEA/心脏停搏)；有症状的心动过缓。',
+        route: '静脉/骨内快速推注；每3-5分钟一次。',
+        info: 'PALS 核心药物。不可电击心律(PEA/停搏)应尽早给药。'
       }
     },
     { 
-      name: '肾上腺素 (气管给药 1:1000)', 
-      dose: `${(weight * 0.1).toFixed(1)} ml`, 
-      note: '0.1 mg/kg, 仅限无通路时', 
-      max: '2.5 mg',
-      relevantSteps: ['SHOCKABLE_2', 'SHOCKABLE_3', 'NON_SHOCKABLE_1'],
+      name: '肾上腺素 (气管内/ET)', 
+      dose: `${(weight * 0.1).toFixed(1)} ml (1:1000)`, 
+      note: '0.1 mg/kg (浓度为1:1000)', 
+      max: '2.5 mg (2.5ml)',
       details: {
-        indication: '无法及时建立 IV/IO 通路时的心脏骤停替代方案。',
-        route: '气管导管 (ET)。',
-        info: '吸收不可预测，剂量通常需为 IV 的 10 倍。效果不如血管内给药。'
+        indication: '心脏骤停期间无法建立 IV/IO 通路时的最后选择。',
+        route: '气管内给药；给药后需数次正压通气。',
+        info: '注意：ET 给药浓度是 1:1000，剂量是 IV 的 10 倍，吸收不确定。'
       }
     },
     { 
-      name: '阿托品', 
-      dose: `${Math.max(0.1, weight * 0.02).toFixed(2)} mg`, 
-      note: '0.02 mg/kg, 最小0.1mg', 
-      max: '0.5 mg',
-      relevantSteps: ['CPR_START', 'ADVANCED_BRADY'],
-      details: {
-        indication: '迷走张力增高、AV 传导阻滞引起的心动过缓。',
-        route: 'IV/IO。',
-        info: '最小剂量限制 0.1mg 以防止引起矛盾性心动过缓。'
-      }
-    },
-    { 
-      name: '胺碘酮 (首剂)', 
+      name: '胺碘酮 (Amiodarone)', 
       dose: `${(weight * 5).toFixed(0)} mg`, 
-      note: 'VF/pVT: 5 mg/kg', 
+      note: '5 mg/kg', 
       max: '300 mg',
-      relevantSteps: ['SHOCKABLE_3', 'WIDE_QRS'],
       details: {
-        indication: '难治性 VF/无脉性室速 (pVT)。',
-        route: 'IV/IO。',
-        info: '副作用包括低血压、心动过缓。在复苏期间可重复给药。'
+        indication: '【难治性心律失常】：电击无效的室颤 (VF) 或无脉性室速 (pVT)。',
+        route: 'IV/IO 快速推注；复苏期间最多使用 3 剂。',
+        info: '若有脉搏的室速，需在 20-60 分钟内缓慢滴注。'
       }
     },
     { 
-      name: '腺苷 (1st → 2nd)', 
-      dose: `${(weight * 0.1).toFixed(1)} → ${(weight * 0.2).toFixed(1)} mg`, 
-      note: 'SVT快速推注', 
-      max: '6mg → 12mg',
-      relevantSteps: ['NARROW_QRS', 'WIDE_QRS', 'UNSTABLE'],
+      name: '利多卡因 (Lidocaine)', 
+      dose: `${(weight * 1).toFixed(0)} mg`, 
+      note: '1 mg/kg', 
       details: {
-        indication: '室上性心动过速 (SVT) 的药物转复。',
-        route: '极速 IV/IO 推注（靠近心脏处）。',
-        info: `半衰期 < 10 秒。推注后需立即用 5-10ml 盐水冲管。可能引起短暂停搏。`
+        indication: '【心室性心律失常】：室颤 (VF) 或无脉性室速 (pVT) 的替代药。',
+        route: 'IV/IO 推注；维持量 20-50 mcg/kg/min。',
+        info: '与胺碘酮效果相当，可根据科室习惯选择。'
       }
     },
     { 
-      name: '等张晶体液', 
-      dose: `${(weight * 20).toFixed(0)} ml`, 
-      note: '20 ml/kg, 快速输注',
-      relevantSteps: ['NON_SHOCKABLE_1', 'ROSC', 'START'],
+      name: '腺苷 (Adenosine)', 
+      dose: `${(weight * 0.1).toFixed(1)} mg`, 
+      note: '0.1 mg/kg (首剂)', 
+      max: '6 mg',
       details: {
-        indication: '低血容量休克、严重脱水导致的循环灌注不良。',
-        route: 'IV/IO 快速滴注。',
-        info: '根据临床反应决定是否追加。注意评估心功能避免容量负荷过重。'
+        indication: '【室上速 (SVT)】：用于折返性室上性心动过速的转复。',
+        route: '最靠近心脏的静脉，极速推注 + 快速盐水冲管。',
+        info: '半衰期极短(<10s)；若无效，第二剂可增加至 0.2 mg/kg。'
       }
     },
     { 
-      name: '电除颤 (1st → 2nd → 次后)', 
-      dose: `${(weight * 2).toFixed(0)} → ${(weight * 4).toFixed(0)} → ≥${(weight * 4).toFixed(0)} J`, 
-      note: '最大 10 J/kg 或成人量',
-      relevantSteps: ['SHOCKABLE_1', 'SHOCKABLE_CHECK_2', 'SHOCKABLE_2', 'SHOCKABLE_CHECK_3', 'SHOCKABLE_3'],
+      name: '阿托品 (Atropine)', 
+      dose: `${(weight * 0.02).toFixed(2)} mg`, 
+      note: '0.02 mg/kg', 
+      max: '0.5 mg (单剂)',
       details: {
-        indication: '心室颤动 (VF)、无脉性室性心动过速 (pVT)。',
-        route: '除颤仪电击。',
-        info: '确保同步功能关闭。电击后立即恢复 CPR，不要停下来检查心律。'
+        indication: '【心动过缓】：由迷走神经张力增高、药物毒性或原发性房室传导阻滞引起。',
+        route: 'IV/IO 推注；最小剂量 0.1 mg。',
+        info: '气管插管期间预防迷走神经反射引起的心率下降。'
       }
     },
     { 
-      name: '同步电复律 (1st → 2nd)', 
-      dose: `${(weight * 0.5).toFixed(1)} → ${(weight * 2).toFixed(0)} J`, 
-      note: '首剂 0.5-1 J/kg',
-      relevantSteps: ['UNSTABLE'],
+      name: '碳酸氢钠 (NaHCO3)', 
+      dose: `${(weight * 1).toFixed(0)} ml (8.4%)`, 
+      note: '1 mEq/kg', 
       details: {
-        indication: '不稳定型 SVT、不稳定型单形性 VT。',
-        route: '除颤仪同步电击。',
-        info: '必须确认开启 SYNC 模式。电击前确认 R 波同步标记正确。'
+        indication: '【代谢性酸中毒】：严重的代谢性酸中毒、高钾血症、三环类抗抑郁药中毒。',
+        route: 'IV/IO 缓慢给药。',
+        info: '确保通气充足（排除产生的CO2），避免与儿茶酚胺在同一管路混合。'
       }
     },
+    { 
+      name: '氯化钙 (CaCl2)', 
+      dose: `${(weight * 20).toFixed(0)} mg`, 
+      note: '20 mg/kg (10%溶液为0.2ml/kg)', 
+      details: {
+        indication: '【特定代谢异常】：低钙血症、高钾血症、高镁血症、钙通道阻滞剂中毒。',
+        route: 'IV/IO 缓慢推注（最好经中心静脉）。',
+        info: '常规复苏不推荐使用，可能加重缺血再灌注损伤。'
+      }
+    },
+    { 
+      name: '硫酸镁 (MgSO4)', 
+      dose: `${(weight * 50).toFixed(0)} mg`, 
+      note: '25-50 mg/kg', 
+      max: '2 g',
+      details: {
+        indication: '【特殊心律失常】：尖端扭转室速 (Torsades de Pointes)；严重哮喘。',
+        route: '心脏骤停时快速推注；有脉搏时 15-30 分钟。',
+        info: '注意可能引起严重低血压。'
+      }
+    },
+    { 
+      name: '葡萄糖 (Dextrose)', 
+      dose: `${(weight * 5).toFixed(0)} ml (D10W)`, 
+      note: '0.5 g/kg', 
+      details: {
+        indication: '【代谢支持】：低血糖症。',
+        route: 'IV/IO；建议使用 10% 葡萄糖。',
+        info: '复苏期间及复苏后均应严密监测血糖，避免高血糖或低血糖。'
+      }
+    }
   ];
 
-  const filteredDrugs = useMemo(() => {
-    if (showAll || currentStepId === 'START' || currentStepId === 'ROSC') return drugs;
-    return drugs.filter(drug => drug.relevantSteps?.includes(currentStepId));
-  }, [currentStepId, showAll, drugs]);
-
-  const hasFilter = currentStepId !== 'START' && currentStepId !== 'ROSC' && !showAll;
-
   return (
-    <div className="space-y-6 pt-4 animate-in fade-in slide-in-from-left-4 duration-500 pb-20">
-      <div className="flex justify-between items-center px-2">
-        <div>
-          <h2 className="text-2xl font-black text-slate-900">精准剂量联动</h2>
-          {hasFilter && (
-            <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mt-0.5 flex items-center gap-1">
-              <Filter className="w-3 h-3" /> 已根据当前步骤过滤相关药物
-            </p>
-          )}
-        </div>
-        <div className="flex flex-col items-end gap-2">
-          <div className="bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-black shadow-lg shadow-blue-100">
-            {weight} KG
-          </div>
-          <button 
-            onClick={() => setShowAll(!showAll)}
-            className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-black transition-all ${showAll ? 'bg-slate-200 text-slate-600' : 'bg-blue-50 text-blue-600 border border-blue-100'}`}
-          >
-            {showAll ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-            {showAll ? '还原过滤' : '显示所有'}
-          </button>
-        </div>
+    <div className="space-y-4 pt-4 pb-20 animate-in fade-in duration-500">
+      <div className="flex bg-slate-100 p-1 rounded-2xl">
+        <button 
+          onClick={() => setActiveSubTab('DRUGS')}
+          className={`flex-1 py-3 text-xs font-black rounded-xl transition-all ${activeSubTab === 'DRUGS' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500'}`}
+        >
+          <Beaker className="w-4 h-4 inline-block mr-1 mb-0.5" /> 核心给药计算
+        </button>
+        <button 
+          onClick={() => setActiveSubTab('EQUIPMENT')}
+          className={`flex-1 py-3 text-xs font-black rounded-xl transition-all ${activeSubTab === 'EQUIPMENT' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500'}`}
+        >
+          <Ruler className="w-4 h-4 inline-block mr-1 mb-0.5" /> 设备规格
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 gap-3">
-        {filteredDrugs.length > 0 ? filteredDrugs.map((drug, idx) => {
-          const originalIdx = drugs.findIndex(d => d.name === drug.name);
-          return (
+      <div className="flex justify-between items-center px-2">
+        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+          <Binary className="w-3 h-3" />
+          {activeSubTab === 'DRUGS' ? '2025 PALS Weight-Based Drugs' : 'Equipment Sizing'}
+        </div>
+        <span className="bg-emerald-600 text-white px-2 py-0.5 rounded-lg text-[10px] font-black shadow-lg shadow-emerald-100">
+          {weight} KG
+        </span>
+      </div>
+
+      {activeSubTab === 'DRUGS' ? (
+        <div className="grid grid-cols-1 gap-3">
+          {drugs.map((drug, idx) => (
             <div 
-              key={originalIdx} 
-              className={`bg-white rounded-[1.5rem] border transition-all cursor-pointer ${expandedIdx === originalIdx ? 'border-blue-400 shadow-md ring-1 ring-blue-100' : 'border-slate-100 shadow-sm hover:border-blue-200'}`}
-              onClick={() => setExpandedIdx(expandedIdx === originalIdx ? null : originalIdx)}
+              key={idx} 
+              className={`bg-white rounded-2xl border transition-all overflow-hidden ${expandedIdx === idx ? 'border-blue-200 shadow-md ring-1 ring-blue-50' : 'border-slate-100 shadow-sm'}`}
+              onClick={() => setExpandedIdx(expandedIdx === idx ? null : idx)}
             >
-              <div className="p-5">
-                <div className="flex justify-between items-start mb-1">
-                  <div className="flex items-center gap-2 pr-4">
-                    <span className="text-[13px] font-black text-slate-800 leading-tight">{drug.name}</span>
-                    <Info className="w-3 h-3 text-blue-400" />
-                  </div>
-                  <span className="text-base font-black text-blue-600 tabular-nums whitespace-nowrap">{drug.dose}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-1">
-                    <Shield className="w-2.5 h-2.5 text-slate-300" />
-                    <span className="text-[10px] font-bold text-slate-400">{drug.note}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {drug.max && (
-                      <span className="text-[9px] font-black text-rose-500 bg-rose-50 px-1.5 py-0.5 rounded uppercase tracking-tighter">极值: {drug.max}</span>
+              <div className="p-4 flex justify-between items-center">
+                <div className="flex flex-col flex-1 pr-4">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-black text-slate-800 leading-tight">{drug.name}</span>
+                    {(drug.name.includes('肾上腺') || drug.name.includes('胺碘') || drug.name.includes('利多') || drug.name.includes('腺苷') || drug.name.includes('阿托')) && (
+                       <Zap className="w-3 h-3 text-rose-500" />
                     )}
-                    {expandedIdx === originalIdx ? <ChevronUp className="w-3 h-3 text-slate-400" /> : <ChevronDown className="w-3 h-3 text-slate-400" />}
                   </div>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter mt-1">{drug.note}</span>
+                </div>
+                <div className="text-right flex flex-col items-end">
+                  <div className="px-3 py-1 bg-blue-50 text-blue-700 rounded-xl text-lg font-black tabular-nums">
+                    {drug.dose}
+                  </div>
+                  {drug.max && <span className="text-[8px] font-black text-rose-500 uppercase mt-1">MAX: {drug.max}</span>}
                 </div>
               </div>
-
-              {expandedIdx === originalIdx && drug.details && (
-                <div className="px-5 pb-5 pt-1 border-t border-slate-50 bg-blue-50/30 rounded-b-[1.5rem] animate-in slide-in-from-top-2 duration-300">
+              {expandedIdx === idx && drug.details && (
+                <div className="px-5 pb-5 pt-3 border-t border-slate-50 bg-slate-50/50">
                   <div className="space-y-3">
                     <div>
-                      <span className="text-[9px] font-black text-blue-500 uppercase block mb-0.5">适应症</span>
-                      <p className="text-[11px] font-bold text-slate-600 leading-snug">{drug.details.indication}</p>
+                      <span className="text-[9px] font-black text-blue-500 uppercase block mb-0.5">核心指征 (Arrhythmia/Condition)</span>
+                      <p className="text-[10px] font-bold text-slate-600 leading-relaxed">{drug.details.indication}</p>
                     </div>
-                    <div>
-                      <span className="text-[9px] font-black text-blue-500 uppercase block mb-0.5">给药途径</span>
-                      <p className="text-[11px] font-bold text-slate-600 leading-snug">{drug.details.route}</p>
-                    </div>
-                    <div>
-                      <span className="text-[9px] font-black text-blue-500 uppercase block mb-0.5">临床备注 / 副作用</span>
-                      <p className="text-[11px] font-bold text-slate-700 leading-snug italic">{drug.details.info}</p>
+                    <div className="flex gap-4">
+                      <div className="flex-1">
+                        <span className="text-[9px] font-black text-slate-400 uppercase block mb-0.5">给药路径 (Route)</span>
+                        <p className="text-[10px] font-bold text-slate-600">{drug.details.route}</p>
+                      </div>
+                      <div className="flex-1">
+                        <span className="text-[9px] font-black text-slate-400 uppercase block mb-0.5">临床备注 (Expert Note)</span>
+                        <p className="text-[10px] font-bold text-slate-500 italic">{drug.details.info}</p>
+                      </div>
                     </div>
                   </div>
                 </div>
               )}
             </div>
-          );
-        }) : (
-          <div className="p-12 text-center bg-slate-50 rounded-[2rem] border border-dashed border-slate-200">
-             <Info className="w-8 h-8 text-slate-300 mx-auto mb-3" />
-             <p className="text-xs font-bold text-slate-400">当前步骤下无特定推荐药物</p>
-             <button onClick={() => setShowAll(true)} className="mt-4 text-xs font-black text-blue-600 underline">查看完整清单</button>
-          </div>
-        )}
-      </div>
-
-      <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100">
-        <div className="flex items-center gap-2 mb-3">
-          <AlertTriangle className="w-5 h-5 text-amber-500" />
-          <span className="text-xs font-black text-slate-900 uppercase">临床实操提醒</span>
+          ))}
         </div>
-        <p className="text-[10px] font-bold text-slate-500 leading-relaxed space-y-2">
-          • <span className="text-slate-900">肾上腺素</span>：如果是 1:1000 规格用于 IV，必须稀释 10 倍。<br/>
-          • <span className="text-slate-900">胺碘酮</span>：在 VF/pVT 时可重复使用至 3 次。<br/>
-          • <span className="text-slate-900">腺苷</span>：必须使用最靠近心脏的通路，并紧随 5-10ml 盐水冲管。
-        </p>
+      ) : (
+        <div className="grid grid-cols-1 gap-2">
+          {equipment.map((item, idx) => (
+            <div key={idx} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex justify-between items-center transition-all hover:border-blue-100">
+              <div className="flex flex-col">
+                <span className="text-xs font-black text-slate-800">{item.name}</span>
+                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">{item.note}</span>
+              </div>
+              <span className="text-sm font-black text-slate-900 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200/50">{item.size}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100 text-blue-800 flex items-start gap-4 shadow-sm">
+        <Shield className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+        <div className="flex-1">
+          <p className="text-[10px] font-black uppercase mb-1">给药安全提示</p>
+          <p className="text-[9px] font-bold opacity-80 leading-relaxed">
+            所有计算均基于 2025 PALS 指南。在抢救高压环境下，请务必实行“双人核对、大声宣读”制度，核实药物浓度、途径及指征后再行给药。
+          </p>
+        </div>
       </div>
     </div>
   );
